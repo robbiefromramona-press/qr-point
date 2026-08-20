@@ -1,0 +1,42 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = "echo 'no build step needed — static frontend'"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Pretty lookup URLs: https://<site>/p/{pointID}  ->  serves the lookup page,
+# which reads the ID from the URL path via JS (see public/p/index.html).
+[[redirects]]
+  from = "/p/*"
+  to = "/p/index.html"
+  status = 200
+
+# API-style aliases so the frontend code reads cleanly.
+[[redirects]]
+  from = "/api/process-csv"
+  to = "/.netlify/functions/process-csv"
+  status = 200
+
+[[redirects]]
+  from = "/api/get-point"
+  to = "/.netlify/functions/get-point"
+  status = 200
+
+[[redirects]]
+  from = "/api/search-points"
+  to = "/.netlify/functions/search-points"
+  status = 200
+
+[[redirects]]
+  from = "/api/qr-batch"
+  to = "/.netlify/functions/qr-batch"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

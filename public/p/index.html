@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Point — Lookup</title>
+<link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-badge" data-logo-text>QR</div>
+  <div class="brand-line">
+    <span class="app-name">QR Point</span>
+    <span class="brand-name" data-brand-name>QR Point</span>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loadingState" class="card" style="text-align:center;">
+    <span class="spinner"></span> Loading point data…
+  </div>
+
+  <div id="pointState" class="card" style="display:none;">
+    <h1 id="pointTitle"></h1>
+    <p class="subtitle" id="pointSubtitle"></p>
+    <dl class="data-grid" id="dataGrid"></dl>
+  </div>
+
+  <div id="errorState" class="card" style="display:none;">
+    <h1>Point not found</h1>
+    <p class="subtitle" id="errorMessage">We couldn't find that point.</p>
+  </div>
+
+  <div class="card">
+    <h2>Look up a different point</h2>
+    <label for="searchInput">Point number or project ID</label>
+    <input type="text" id="searchInput" placeholder="e.g. 104" />
+    <button class="btn secondary" id="searchBtn" style="margin-top:10px;">Search</button>
+    <div id="searchResults" style="margin-top:12px;"></div>
+  </div>
+
+  <p class="footer-note">Scanned in the field · no login required</p>
+</div>
+
+<script src="/assets/theme.js"></script>
+<script>
+QRPointTheme.applyTheme();
+
+function getPointIdFromUrl() {
+  // Supports both /p/{id} (via Netlify redirect) and /p/index.html?id={id}
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('id')) return params.get('id');
+
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  // pathParts looks like ["p", "{id}"] when hitting the pretty URL
+  if (pathParts.length >= 2 && pathParts[0] === 'p' && pathParts[1] !== 'index.html') {
+    return decodeURIComponent(pathParts[1]);
+  }
+  return null;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function humanizeKey(key) {
+  return key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+async function loadPoint(id) {
+  const loadingState = document.getElementById('loadingState');
+  const pointState = document.getElementById('pointState');
+  const errorState = document.getElementById('errorState');
+
+  try {
+    const res = await fetch(`/api/get-point?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Point not found.');
+
+    const point = data.point;
+    document.getElementById('pointTitle').textContent = `Point ${point.point_number}`;
+    document.getElementById('pointSubtitle').textContent = `Project: ${point.project_id} · ID: ${point.id}`;
+
+    const grid = document.getElementById('dataGrid');
+    const entries = Object.entries(point.raw_data || {});
+    grid.innerHTML = entries.map(([k, v]) =>
+      `<dt>${escapeHtml(humanizeKey(k))}</dt><dd>${escapeHtml(v ?? '—')}</dd>`
+    ).join('');
+
+    loadingState.style.display = 'none';
+    pointState.style.display = 'block';
+  } catch (err) {
+    document.getElementById('errorMessage').textContent = err.message;
+    loadingState.style.display = 'none';
+    errorState.style.display = 'block';
+  }
+}
+
+const initialId = getPointIdFromUrl();
+if (initialId) {
+  loadPoint(initialId);
+} else {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+  document.getElementById('errorMessage').textContent = 'No point ID in the URL — scan a QR code, or search below.';
+}
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const q = document.getElementById('searchInput').value.trim();
+  const resultsEl = document.getElementById('searchResults');
+  if (!q) return;
+  resultsEl.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await fetch(`/api/search-points?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Search failed.');
+    if (!data.results.length) {
+      resultsEl.innerHTML = '<div class="status info">No matches.</div>';
+      return;
+    }
+    resultsEl.innerHTML = data.results.map((r) =>
+      `<div style="padding:8px 0;border-bottom:1px solid var(--color-border);">
+        <a href="/p/${encodeURIComponent(r.id)}">Point ${escapeHtml(r.point_number)}</a>
+        <span class="subtitle" style="margin-left:8px;">${escapeHtml(r.project_id)}</span>
+      </div>`
+    ).join('');
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="status err">${escapeHtml(err.message)}</div>`;
+  }
+});
+
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('searchBtn').click();
+});
+</script>
+</body>
+</html>

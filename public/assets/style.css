@@ -1,0 +1,145 @@
+/* QR Point — shared, brand-neutral styles.
+   Colors come from CSS custom properties set by theme.js so the same
+   markup can be skinned per brand without touching this file. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg, #0f172a);
+  color: var(--color-text, #f1f5f9);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border, #334155);
+}
+
+.logo-badge {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent, #38bdf8);
+  color: var(--color-accent-contrast, #0f172a);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  border-radius: var(--logo-shape, 10px);
+}
+
+.brand-line {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-line .app-name { font-weight: 700; font-size: 16px; }
+.brand-line .brand-name { font-size: 12px; color: var(--color-text-muted, #94a3b8); }
+
+h1 { font-size: 22px; margin: 24px 0 4px; }
+h2 { font-size: 16px; margin: 24px 0 8px; }
+p.subtitle { color: var(--color-text-muted, #94a3b8); margin: 0 0 20px; font-size: 14px; }
+
+.card {
+  background: var(--color-surface, #1e293b);
+  border: 1px solid var(--color-border, #334155);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.dropzone {
+  border: 2px dashed var(--color-border, #334155);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--color-accent, #38bdf8);
+  background: var(--color-surface-2, #273449);
+}
+.dropzone input[type="file"] { display: none; }
+.dropzone .hint { color: var(--color-text-muted, #94a3b8); font-size: 13px; margin-top: 6px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-accent, #38bdf8);
+  color: var(--color-accent-contrast, #0f172a);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.secondary {
+  background: transparent;
+  color: var(--color-text, #f1f5f9);
+  border: 1px solid var(--color-border, #334155);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #334155);
+  background: var(--color-surface-2, #273449);
+  color: var(--color-text, #f1f5f9);
+  font-size: 15px;
+}
+label { font-size: 13px; color: var(--color-text-muted, #94a3b8); display: block; margin-bottom: 6px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border, #334155);
+  white-space: nowrap;
+}
+th { color: var(--color-text-muted, #94a3b8); font-weight: 600; }
+.table-scroll { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+
+.status { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin: 12px 0; }
+.status.ok { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.status.err { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.status.info { background: rgba(148, 163, 184, 0.15); color: var(--color-text-muted, #94a3b8); }
+
+.data-grid { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; }
+.data-grid dt { color: var(--color-text-muted, #94a3b8); font-size: 13px; }
+.data-grid dd { margin: 0; font-size: 15px; font-weight: 600; word-break: break-word; }
+
+.footer-note { text-align: center; color: var(--color-text-muted, #94a3b8); font-size: 12px; margin-top: 32px; }
+
+a { color: var(--color-accent, #38bdf8); }
+
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

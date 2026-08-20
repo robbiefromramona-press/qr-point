@@ -1,0 +1,18 @@
+{
+  "name": "qr-point",
+  "version": "1.0.0",
+  "description": "QR Point — scan a jobsite QR code to instantly pull up Trimble total-station point data. Shared tool for BIM-Press.com and TotalStationTech.com.",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "csv-parse": "^5.5.6",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.38.0"
+  }
+}

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Point — Upload</title>
+<link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<div class="topbar">
+  <div class="logo-badge" data-logo-text>QR</div>
+  <div class="brand-line">
+    <span class="app-name">QR Point</span>
+    <span class="brand-name" data-brand-name>QR Point</span>
+  </div>
+</div>
+
+<div class="container">
+  <h1>Upload a point export</h1>
+  <p class="subtitle">Drop in a Trimble CSV export. We'll parse it, let you sanity-check it, then generate a QR code per point and a printable label sheet.</p>
+
+  <div class="card">
+    <label for="projectId">Project ID</label>
+    <input type="text" id="projectId" placeholder="e.g. 24-118-MAIN-ST" />
+    <p class="subtitle" style="margin: 8px 0 0;">Groups these points together and prefixes each point's QR ID.</p>
+  </div>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      <div id="dropzoneLabel">
+        <strong>Click to choose a CSV</strong> or drag one here
+        <div class="hint">Any Trimble export template — columns are detected automatically.</div>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,text/csv" />
+    </div>
+  </div>
+
+  <div id="previewSection" style="display:none;">
+    <div class="card">
+      <h2>Preview — <span id="rowCount"></span> rows detected</h2>
+      <div class="table-scroll">
+        <table id="previewTable"></table>
+      </div>
+      <p class="subtitle" style="margin-top:10px;">Check that columns look right before confirming. Nothing is uploaded yet.</p>
+      <button class="btn" id="confirmBtn">Confirm &amp; generate QR codes</button>
+    </div>
+  </div>
+
+  <div id="statusArea"></div>
+
+  <div id="resultSection" style="display:none;">
+    <div class="card">
+      <h2>Done — <span id="resultCount"></span> points ready</h2>
+      <p class="subtitle">Each point now has a lookup page. Download the label sheet to print, or open individual points below.</p>
+      <button class="btn" id="downloadPdfBtn">Download QR label sheet (PDF)</button>
+      <div class="table-scroll" style="margin-top:16px;">
+        <table id="resultTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">QR Point v1 · sample CSV available in <code>/sample-data/sample_points.csv</code> in the repo</p>
+</div>
+
+<script src="/assets/theme.js"></script>
+<script>
+QRPointTheme.applyTheme();
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const previewSection = document.getElementById('previewSection');
+const previewTable = document.getElementById('previewTable');
+const rowCount = document.getElementById('rowCount');
+const confirmBtn = document.getElementById('confirmBtn');
+const statusArea = document.getElementById('statusArea');
+const resultSection = document.getElementById('resultSection');
+const resultTable = document.getElementById('resultTable');
+const resultCount = document.getElementById('resultCount');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+const projectIdInput = document.getElementById('projectId');
+
+let currentCsvText = null;
+let currentRows = null;
+let currentManifest = null;
+
+// --- Minimal CSV parser (handles quoted fields, commas, embedded newlines) ---
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+
+  const filtered = rows.filter((r) => r.some((cell) => cell.trim() !== ''));
+  if (!filtered.length) return [];
+
+  const headers = filtered[0].map((h) => h.trim());
+  return filtered.slice(1).map((r) => {
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').trim(); });
+    return obj;
+  });
+}
+
+function renderPreview(rows) {
+  if (!rows.length) {
+    showStatus('CSV parsed but no data rows were found.', 'err');
+    return;
+  }
+  const headers = Object.keys(rows[0]);
+  const thead = '<thead><tr>' + headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+  const bodyRows = rows.slice(0, 15).map((r) =>
+    '<tr>' + headers.map((h) => `<td>${escapeHtml(r[h] ?? '')}</td>`).join('') + '</tr>'
+  ).join('');
+  previewTable.innerHTML = thead + '<tbody>' + bodyRows + '</tbody>';
+  rowCount.textContent = rows.length;
+  previewSection.style.display = 'block';
+  if (rows.length > 15) {
+    showStatus(`Showing first 15 of ${rows.length} rows.`, 'info');
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showStatus(msg, kind) {
+  statusArea.innerHTML = `<div class="status ${kind}">${msg}</div>`;
+}
+
+function clearStatus() { statusArea.innerHTML = ''; }
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  clearStatus();
+  resultSection.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = () => {
+    currentCsvText = reader.result;
+    currentRows = parseCsv(currentCsvText);
+    renderPreview(currentRows);
+  };
+  reader.onerror = () => showStatus('Could not read that file.', 'err');
+  reader.readAsText(file);
+}
+
+confirmBtn.addEventListener('click', async () => {
+  const projectId = projectIdInput.value.trim();
+  if (!projectId) {
+    showStatus('Enter a Project ID before confirming.', 'err');
+    projectIdInput.focus();
+    return;
+  }
+  if (!currentCsvText) return;
+
+  confirmBtn.disabled = true;
+  confirmBtn.innerHTML = '<span class="spinner"></span> Processing…';
+  clearStatus();
+
+  try {
+    const res = await fetch('/api/process-csv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csvText: currentCsvText, projectId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Processing failed.');
+
+    currentManifest = data.manifest;
+    showStatus(`Saved ${data.count} points to project "${projectId}".`, 'ok');
+    renderResults(data.manifest, projectId);
+  } catch (err) {
+    showStatus(`Error: ${err.message}`, 'err');
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm & generate QR codes';
+  }
+});
+
+function renderResults(manifest, projectId) {
+  resultCount.textContent = manifest.length;
+  const rows = manifest.map((m) => {
+    const url = `${window.location.origin}/p/${m.id}`;
+    return `<tr><td>${escapeHtml(m.pointNumber)}</td><td>${escapeHtml(m.id)}</td><td><a href="${url}" target="_blank">Open lookup page</a></td></tr>`;
+  }).join('');
+  resultTable.innerHTML = `<thead><tr><th>Point #</th><th>Point ID</th><th>Link</th></tr></thead><tbody>${rows}</tbody>`;
+  resultSection.style.display = 'block';
+  downloadPdfBtn.dataset.projectId = projectId;
+}
+
+downloadPdfBtn.addEventListener('click', async () => {
+  if (!currentManifest) return;
+  downloadPdfBtn.disabled = true;
+  downloadPdfBtn.innerHTML = '<span class="spinner"></span> Building PDF…';
+  clearStatus();
+  try {
+    const res = await fetch('/api/qr-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ manifest: currentManifest, baseUrl: window.location.origin }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'PDF generation failed.');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `qr-point-labels-${downloadPdfBtn.dataset.projectId || 'export'}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showStatus(`Error: ${err.message}`, 'err');
+  } finally {
+    downloadPdfBtn.disabled = false;
+    downloadPdfBtn.textContent = 'Download QR label sheet (PDF)';
+  }
+});
+</script>
+</body>
+</html>

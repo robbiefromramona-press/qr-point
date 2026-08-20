@@ -71,6 +71,18 @@ exports.handler = async (event) => {
       skip_empty_lines: true,
       trim: true,
       bom: true,
+      // Trimble attribute values often include feet/inches marks like
+      // 3' - 10 3/32" without wrapping the field in quotes. Strict CSV
+      // parsing treats that stray " as the start of a new quoted field and
+      // errors out ("Invalid Opening Quote"). relax_quotes tells the parser
+      // to treat quote characters that appear mid-field as literal text
+      // instead, which is what we want for real-world Trimble exports.
+      relax_quotes: true,
+      // Real jobsite exports occasionally have a row with an extra or
+      // missing trailing column (a stray comma, a blank attribute). Rather
+      // than rejecting the whole file, keep whatever columns each row does
+      // have instead of erroring on a length mismatch.
+      relax_column_count: true,
     });
   } catch (err) {
     return jsonResponse(400, { error: `Could not parse CSV: ${err.message}` });

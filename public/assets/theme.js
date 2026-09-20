@@ -4,10 +4,15 @@
 //   1. ?brand=bp  or  ?brand=tst  in the URL (easiest for testing / linking), or
 //   2. hostname sniffing (qrpoint.bim-press.com vs qrpoint.totalstationtech.com)
 // Falls back to the BIM-Press theme as the default.
+//
+// Each theme also carries the parent site it belongs to, so the Terms and
+// Privacy links in the page footer point at that brand's legal pages rather
+// than being hard-coded to one of them.
 
 const THEMES = {
   bp: {
     name: 'BIM-Press',
+    site: 'https://bim-press.com',
     '--color-bg': '#0d0d0d',
     '--color-surface': '#171717',
     '--color-surface-2': '#212121',
@@ -21,6 +26,7 @@ const THEMES = {
   },
   tst: {
     name: 'TotalStationTech',
+    site: 'https://totalstationtech.com',
     '--color-bg': '#141a12',
     '--color-surface': '#1c241a',
     '--color-surface-2': '#242f22',
@@ -34,6 +40,7 @@ const THEMES = {
   },
   neutral: {
     name: 'QR Point',
+    site: 'https://bim-press.com',
     '--color-bg': '#0f172a',
     '--color-surface': '#1e293b',
     '--color-surface-2': '#273449',
@@ -74,6 +81,15 @@ function applyTheme() {
     el.textContent = theme.name;
   });
   document.title = `${theme.name} · QR Point`;
+
+  // Point the footer's legal links at whichever parent site this brand is.
+  document.querySelectorAll('[data-legal]').forEach((el) => {
+    el.href = `${theme.site}/${el.dataset.legal}.html`;
+  });
+  document.querySelectorAll('[data-legal-site]').forEach((el) => {
+    el.href = theme.site;
+    el.textContent = theme.name;
+  });
 
   return theme;
 }

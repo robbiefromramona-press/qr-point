@@ -143,3 +143,18 @@ a { color: var(--color-accent, #38bdf8); }
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Consent gate above the upload action, and the legal line in the footer. */
+.consent {
+  margin: 14px 0 16px;
+  padding: 14px 16px;
+  background: var(--color-surface-2, #273449);
+  border: 1px solid var(--color-border, #334155);
+  border-radius: 8px;
+}
+.consent p { font-size: 13px; line-height: 1.55; margin: 0 0 10px; color: var(--color-text-muted, #94a3b8); }
+.consent p strong { color: var(--color-text, #f1f5f9); }
+.consent .consent-warn strong { color: var(--color-accent, #38bdf8); }
+.consent-check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-size: 13px; line-height: 1.45; color: var(--color-text, #f1f5f9); }
+.consent-check input { margin: 2px 0 0; width: 17px; height: 17px; flex: none; cursor: pointer; accent-color: var(--color-accent, #38bdf8); }
+.legal-note { margin-top: 10px; line-height: 1.7; }

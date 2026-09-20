@@ -42,7 +42,21 @@
         <table id="previewTable"></table>
       </div>
       <p class="subtitle" style="margin-top:10px;">Check that columns look right before confirming. Nothing is uploaded yet.</p>
-      <button class="btn" id="confirmBtn">Confirm &amp; generate QR codes</button>
+
+      <!-- Consent gate. Confirming is the moment the point data leaves the
+           device, so the warning and the checkbox sit directly above it. -->
+      <div class="consent">
+        <p><strong>Confirming uploads this point data to our server.</strong> Unlike our other tools, QR Point stores each point so its QR code has a lookup page to open. Rows stay until we delete them, and anyone with a point's link or ID can view that point.</p>
+        <p class="consent-warn"><strong>Verify before you build.</strong> Coordinates and point data shown on a QR lookup page must be independently verified by a qualified professional before being used for actual field layout, staking or construction.</p>
+        <label class="consent-check" for="consentCheck">
+          <input type="checkbox" id="consentCheck" />
+          <span>I have the right to upload this file and I agree to the
+            <a data-legal="terms" href="https://bim-press.com/terms.html" target="_blank" rel="noopener">Terms of Service</a> and
+            <a data-legal="privacy" href="https://bim-press.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        </label>
+      </div>
+
+      <button class="btn" id="confirmBtn" disabled>Confirm &amp; generate QR codes</button>
     </div>
   </div>
 
@@ -60,6 +74,12 @@
   </div>
 
   <p class="footer-note">QR Point v1 · sample CSV available in <code>/sample-data/sample_points.csv</code> in the repo</p>
+  <p class="footer-note legal-note">
+    Point data is uploaded and stored per our
+    <a data-legal="privacy" href="https://bim-press.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> &middot;
+    <a data-legal="terms" href="https://bim-press.com/terms.html" target="_blank" rel="noopener">Terms of Service</a><br>
+    Always verify point data before using it for field layout or construction.
+  </p>
 </div>
 
 <script src="/assets/theme.js"></script>
@@ -173,7 +193,14 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
+// Consent gate: confirming stays disabled until the box is ticked.
+const consentCheck = document.getElementById('consentCheck');
+function syncConsent() { confirmBtn.disabled = !consentCheck.checked; }
+consentCheck.addEventListener('change', syncConsent);
+syncConsent();
+
 confirmBtn.addEventListener('click', async () => {
+  if (!consentCheck.checked) return;
   const projectId = projectIdInput.value.trim();
   if (!projectId) {
     showStatus('Enter a Project ID before confirming.', 'err');
@@ -201,8 +228,8 @@ confirmBtn.addEventListener('click', async () => {
   } catch (err) {
     showStatus(`Error: ${err.message}`, 'err');
   } finally {
-    confirmBtn.disabled = false;
     confirmBtn.textContent = 'Confirm & generate QR codes';
+    syncConsent();
   }
 });
 

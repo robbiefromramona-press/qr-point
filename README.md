@@ -10,7 +10,7 @@ Replaces handwritten point numbers on laser labels: export from your total stati
 2. Preview the parsed columns to sanity-check the file before confirming (nothing is saved yet).
 3. Confirm — the CSV is sent to a Netlify Function, which parses it (any column layout, no fixed schema) and stores one row per point in Supabase.
 4. Download the generated PDF label sheet — one QR code + point number per label, laid out 3-across on US Letter paper, ready to print.
-5. In the field, scan a label (or use the manual search box on the lookup page) to see that point's full data on a phone-friendly page. No login required.
+5. In the field, scan a label (or use the manual search box on the lookup page, which asks for the Project ID to search within) to see that point's full data on a phone-friendly page. No login required.
 
 ## Tech stack
 

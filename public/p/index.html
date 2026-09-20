@@ -33,13 +33,21 @@
 
   <div class="card">
     <h2>Look up a different point</h2>
-    <label for="searchInput">Point number or project ID</label>
+    <label for="searchProject">Project ID</label>
+    <input type="text" id="searchProject" placeholder="e.g. 24-118-MAIN-ST" />
+    <label for="searchInput" style="margin-top:10px;">Point number</label>
     <input type="text" id="searchInput" placeholder="e.g. 104" />
     <button class="btn secondary" id="searchBtn" style="margin-top:10px;">Search</button>
     <div id="searchResults" style="margin-top:12px;"></div>
   </div>
 
   <p class="footer-note">Scanned in the field · no login required</p>
+  <p class="footer-note legal-note">
+    Point data is stored per our
+    <a data-legal="privacy" href="https://bim-press.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> &middot;
+    <a data-legal="terms" href="https://bim-press.com/terms.html" target="_blank" rel="noopener">Terms of Service</a><br>
+    Always verify point data before using it for field layout or construction.
+  </p>
 </div>
 
 <script src="/assets/theme.js"></script>
@@ -107,11 +115,20 @@ if (initialId) {
 
 document.getElementById('searchBtn').addEventListener('click', async () => {
   const q = document.getElementById('searchInput').value.trim();
+  const projectId = document.getElementById('searchProject').value.trim();
   const resultsEl = document.getElementById('searchResults');
   if (!q) return;
+  // Searches are scoped to a single project, so the project ID is required.
+  if (!projectId) {
+    resultsEl.innerHTML = '<div class="status err">Enter the Project ID to search within.</div>';
+    document.getElementById('searchProject').focus();
+    return;
+  }
   resultsEl.innerHTML = '<span class="spinner"></span>';
   try {
-    const res = await fetch(`/api/search-points?q=${encodeURIComponent(q)}`);
+    const res = await fetch(
+      `/api/search-points?q=${encodeURIComponent(q)}&projectId=${encodeURIComponent(projectId)}`
+    );
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Search failed.');
     if (!data.results.length) {
@@ -129,8 +146,10 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('searchInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('searchBtn').click();
+['searchInput', 'searchProject'].forEach((id) => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('searchBtn').click();
+  });
 });
 </script>
 </body>

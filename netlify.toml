@@ -1,7 +1,17 @@
+# The frontend is static; the real work happens in netlify/functions, which
+# Netlify already bundles with esbuild (see [functions] below). The build
+# command now also minifies the browser-side files in place, in Netlify's own
+# checkout -- your source files are never touched by it.
+#
+# This one is cosmetic rather than protective: there is nothing valuable in
+# public/ to hide. The parsing, ID minting, QR generation and database writes
+# are all server-side already, which is the right way round. See
+# AUDIT-REPORT.md -- what this repo actually needs is auth and rate limiting on
+# the four functions, not minification.
 [build]
   publish = "public"
   functions = "netlify/functions"
-  command = "echo 'no build step needed — static frontend'"
+  command = "npx --yes html-minifier-terser@7.2.0 --minify-js --minify-css --remove-comments --input-dir public --output-dir public --file-ext html && npx --yes esbuild@0.25.0 public/assets/*.js --minify --allow-overwrite --outdir=public/assets"
 
 [functions]
   node_bundler = "esbuild"

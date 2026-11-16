@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 dist/
 *.log
+
+# Local secrets and private notes: never commit
+.env.*
+!.env.example
+_private/

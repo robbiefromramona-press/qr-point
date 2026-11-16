@@ -1,5 +1,7 @@
 # QR Point
 
+Built with Claude by robbiefromramona-press · MIT licensed.
+
 Scan a QR code on a jobsite (or type a point number) to instantly pull up that point's survey data — coordinates, description, layer, and whatever else was in the original Trimble CSV export. Shared tool for **BIM-Press.com** and **TotalStationTech.com**.
 
 Replaces handwritten point numbers on laser labels: export from your total station, upload the CSV here, print the generated QR label sheet, stick them on stakes/equipment/wherever, scan in the field.
@@ -114,3 +116,7 @@ To swap in real logos instead of the text-badge placeholder, replace the `.logo-
 - Linking points to RFIs / plan sets — the `raw_data` jsonb column and `project_id` grouping leave room to add related-record references without a migration.
 - Auth for uploading/managing projects (v1 upload page has no login — anyone with the URL can upload; fine for internal use, worth locking down before wider rollout).
 - Delete-by-project and/or auto-expiry, if old jobsite data needs to be cleared out.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
